@@ -28,5 +28,37 @@ func Read(ctx context.Context, id uint) (User, error) {
 
 	return user, err
 }
-func Update() {}
-func Delete() {}
+func Update(ctx context.Context, id string, data User) error {
+	result := configs.Connection.WithContext(ctx).
+		Model(&User{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"name":  data.Name,
+			"email": data.Email,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func Delete(ctx context.Context, id string) error {
+	result := configs.Connection.WithContext(ctx).
+		Delete(&User{}, id)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
