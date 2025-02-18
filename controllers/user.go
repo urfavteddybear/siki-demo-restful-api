@@ -13,14 +13,23 @@ import (
 func Create(c echo.Context) error {
 	ctx := c.Request().Context()
 
+	var inputData struct {
+		Name  string `json:"name" form:"name"`
+		Email string `json:"email" form:"email"`
+	}
+
+	if err := c.Bind(&inputData); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]any{
+			"message": "Bad Request",
+			"error":   err.Error(),
+		})
+	}
+
 	policy := bluemonday.UGCPolicy()
-	name := c.FormValue("name")
-	email := c.FormValue("email")
+	cleanName := policy.Sanitize(inputData.Name)
+	cleanEmail := policy.Sanitize(inputData.Email)
 
-	cleanName := policy.Sanitize(name)
-	cleanEmail := policy.Sanitize(email)
-
-	if name == "" || email == "" {
+	if cleanName == "" || cleanEmail == "" {
 		return c.JSON(http.StatusBadRequest, map[string]any{
 			"message": "Bad Request",
 		})
@@ -34,7 +43,7 @@ func Create(c echo.Context) error {
 	if err := models.Create(ctx, data); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]any{
 			"message": "Internal Server Error",
-			"error":   err,
+			"error":   err.Error(),
 		})
 	}
 
@@ -58,7 +67,6 @@ func Read(c echo.Context) error {
 			First(&user).Error
 		result = user
 
-		// Handle not found case
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]any{
 				"message": "User not found",
@@ -88,16 +96,23 @@ func Update(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")
 
-	// Sanitize input
+	var inputData struct {
+		Name  string `json:"name" form:"name"`
+		Email string `json:"email" form:"email"`
+	}
+
+	if err := c.Bind(&inputData); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]any{
+			"message": "Bad Request",
+			"error":   err.Error(),
+		})
+	}
+
 	policy := bluemonday.UGCPolicy()
-	name := c.FormValue("name")
-	email := c.FormValue("email")
+	cleanName := policy.Sanitize(inputData.Name)
+	cleanEmail := policy.Sanitize(inputData.Email)
 
-	cleanName := policy.Sanitize(name)
-	cleanEmail := policy.Sanitize(email)
-
-	// Validate input
-	if name == "" || email == "" {
+	if cleanName == "" || cleanEmail == "" {
 		return c.JSON(http.StatusBadRequest, map[string]any{
 			"message": "Bad Request",
 		})
@@ -111,7 +126,7 @@ func Update(c echo.Context) error {
 	if err := models.Update(ctx, id, data); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]any{
 			"message": "Internal Server Error",
-			"error":   err,
+			"error":   err.Error(),
 		})
 	}
 
